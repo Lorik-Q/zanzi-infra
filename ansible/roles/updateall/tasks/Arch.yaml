@@ -1,0 +1,4 @@
+- name: Update Arch Linux systems
+  pacman:
+    update_cache: yes
+    upgrade: yes

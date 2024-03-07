@@ -1,0 +1,5 @@
+---
+- name: Update all packages redhat
+  ansible.builtin.yum:
+    name: '*'
+    state: latest

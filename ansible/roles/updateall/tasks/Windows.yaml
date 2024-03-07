@@ -1,0 +1,8 @@
+---
+- name: update Windows
+  win_updates:
+    category_names: '*'
+
+- name: reboot windows
+  win_reboot:
+    reboot_timeout: 3600

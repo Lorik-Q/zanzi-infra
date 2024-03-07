@@ -1,0 +1,5 @@
+---
+- name: Update SUSE-based systems
+  zypper:
+    name: '*'
+    state: latest

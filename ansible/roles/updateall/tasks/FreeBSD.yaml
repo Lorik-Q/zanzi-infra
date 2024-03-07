@@ -1,0 +1,5 @@
+---
+- name: Update systems using pkg (FreeBSD, etc.)
+  pkgng:
+    name: '*'
+    state: latest
