@@ -15,9 +15,9 @@
 # -i -> specify ansible config file
 # optional: add -v, -vv or -vvv to increase verbosity (more logs, handy when troubleshooting)
 
-    - name: Update apt cache
-      apt:
-        update_cache: yes
+    - name: Update system
+      include_role:
+        - updateall
 
     - name: Install dependencies
       apt:
