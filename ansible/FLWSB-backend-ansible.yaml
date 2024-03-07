@@ -61,22 +61,21 @@
 
     - name: Copy repo from local machine to remote server
       ansible.builtin.copy:
-        src: ~/flexible-lorawan-architecture # Change this to the folder where you copied this repo
+        src: ~/zanzi-infra # Change this to the folder where you copied this repo
         dest: ~/
         mode: preserve # keep same permissions as source file
 
     - name: copy .env to src dir
       ansible.builtin.copy:
         src: .env
-        dest: ~/flexible-lorawan-architecture/src/.env
+        dest: ~/zanzi-infra/src/.env
         mode: preserve
 
     - name: Copy .env to nginx directory
       ansible.builtin.copy:
         src: .env
-        dest: ~/flexible-lorawan-architecture/src/nginx/.env
+        dest: ~/zanzi-infra/src/nginx/.env
         mode: preserve
-
 
     - name: Generate SSL certificates
       ansible.builtin.command: certbot certonly --agree-tos --email "{{ email }}" --standalone -d {{ item }}
