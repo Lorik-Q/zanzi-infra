@@ -1,0 +1,8 @@
+---
+- name: Install and configure unattended-upgrades
+  ansible.builtin.include_tasks: checkmk_server-install.yaml
+  when: ansible_os_family == 'Rocky'
+
+- name: Install and configure unattended-upgrades
+  ansible.builtin.include_tasks: checkmk_server-install-rocky.yaml
+  when: ansible_os_family == 'Debian'

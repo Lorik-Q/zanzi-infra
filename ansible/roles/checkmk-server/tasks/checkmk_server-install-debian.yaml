@@ -1,0 +1,76 @@
+---
+- name: Update all packages to the latest version for Debian
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install prerequisite packages for CheckMK
+  apt:
+    name:
+      - xinetd
+      - graphviz
+      - freeradius-utils
+      - php-mbstring
+    state: present
+    update_cache: yes
+
+- name: Fetch latest checkmk release URL
+  uri:
+    url: "https://download.checkmk.com/stable_downloads.json"
+    return_content: true
+  register: json_response
+
+- name: Create directory for latest checkmk release
+  file:
+    path: /root/checkmk/latest_release
+    state: directory
+    mode: '0755'
+
+- name: Download the latest checkmk distribution
+  get_url:
+    url: 'https://download.checkmk.com/checkmk/{{ latest_version }}/{{ dynamic_file_name }}'
+    dest: '/root/checkmk/latest_release/check-mk-raw-latest.deb'
+    mode: '0644'
+  vars:
+    latest_version: "{{ json_response.json.checkmk | dict2items | sort(attribute='key') | last | json_query('value.version') }}"
+    dynamic_file_name: "{{ json_response.json.checkmk | dict2items | sort(attribute='key') | last | json_query('value.editions.cre.deb[0]') }}"
+
+- name: Set fact for checkmk version
+  set_fact:
+    checkmk_version: "{{ json_response.json.checkmk | dict2items | sort(attribute='key') | last | json_query('value.version') }}"
+
+- name: Install CheckMK
+  apt:
+    deb: /root/checkmk/latest_release/check-mk-raw-latest.deb
+
+- name: Remove the downloaded deb
+  file:
+    path: '/root/checkmk/latest_release/check-mk-raw-latest.deb'
+    state: absent
+
+- name: Create a new site - monitoring
+  become: true
+  shell: |
+    set -o pipefail
+    omd -V {{ checkmk_version }}.cre create {{ server_site_name }}
+  args:
+    executable: /bin/bash
+    creates: "/omd/sites/{{ server_site_name }}"
+  register: checkmk_server_sites_created
+
+- name: Update Admin Password
+  shell: |
+    set -o pipefail
+    echo '{{ admin_pw }}' | htpasswd -i -B -C 12 /omd/sites/{{ server_site_name }}/etc/htpasswd cmkadmin
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Start the site - monitoring
+  become: true
+  shell: |
+    set -o pipefail
+    omd start {{ server_site_name }}
+  args:
+    executable: /bin/bash
+    creates: "/opt/omd/sites/{{ server_site_name }}/temp/run/live"

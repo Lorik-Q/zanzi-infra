@@ -1,0 +1,128 @@
+---
+- name: Hetzner server for FLWSB backend
+  hosts: FLWSB_hetzner
+  user: '{{ user }}'
+  vars:
+    domains:
+      - zanzi-test-2-grafana.aplab.be
+      - zanzi-test-2-api.aplab.be
+  roles:
+    - ufwinstall
+
+  tasks:
+
+# RUN THIS PLAYBOOK: ansible-playbook -K -i ansible.cfg FLWSB-backend-ansible.yaml
+# -K -> ask become password (root)
+# -i -> specify ansible config file
+# optional: add -v, -vv or -vvv to increase verbosity (more logs, handy when troubleshooting)
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    
+    # checkmk roles added but one is for host and other is for client.
+    # currently only host is added but no docker container monitoring
+    - name: install and set-up checkmk host
+      include_role:
+        - checkmk-server
+
+    - name: Install dependencies
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Add Docker APT GPG key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
+        state: present
+
+    - name: Install Docker and Docker Compose
+      apt:
+        name:
+          - docker
+          - docker-compose
+        state: present
+      become: true
+
+    - name: Add user to docker group
+      user:
+        name: "{{ user }}"
+        append: yes
+        groups: docker
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Copy repo from local machine to remote server
+      ansible.builtin.copy:
+        src: ~/zanzi-infra # Change this to the folder where you copied this repo
+        dest: ~/
+        mode: preserve # keep same permissions as source file
+
+    - name: copy .env to src dir
+      ansible.builtin.copy:
+        src: .env
+        dest: ~/zanzi-infra/src/.env
+        mode: preserve
+
+    - name: Copy .env to nginx directory
+      ansible.builtin.copy:
+        src: .env
+        dest: ~/zanzi-infra/src/nginx/.env
+        mode: preserve
+
+    - name: Generate SSL certificates
+      ansible.builtin.command: certbot certonly --agree-tos --email "{{ email }}" --standalone -d {{ item }}
+      args:
+        creates: "/etc/letsencrypt/live/{{ item }}"
+      with_items: "{{ domains }}"
+      become: true
+
+    - name: Renew certificates
+      ansible.builtin.cron:
+        name: "Renew SSL certs"
+        job: "certbot renew --quiet --post-hook 'systemctl reload nginx'"
+        minute: "0"
+        hour: "0"
+        weekday: "1"
+        # crontab runs every monday at 00:00
+
+    - name: Check if Nginx is installed
+      ansible.builtin.stat:
+        path: /etc/nginx/nginx.conf
+      register: nginx_installed
+
+    - name: Check if Nginx is enabled
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+      register: nginx_enabled
+      when: nginx_installed.stat.exists
+
+    - name: Stop and disable Nginx if installed and enabled
+      ansible.builtin.systemd:
+        name: nginx
+        state: stopped
+        enabled: no
+      when: nginx_installed.stat.exists
+
+    - name: Bring docker compose up
+      community.docker.docker_compose:
+        project_src: flexible-lorawan-architecture/src/
+        files:
+          - docker-compose.yaml
+      become: true
