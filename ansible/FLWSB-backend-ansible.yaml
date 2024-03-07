@@ -61,7 +61,7 @@
 
     - name: Copy repo from local machine to remote server
       ansible.builtin.copy:
-        src: ~/School/zanzi-project/flexible-lorawan-architecture
+        src: ~/flexible-lorawan-architecture # Change this to the folder where you copied this repo
         dest: ~/
         mode: preserve # keep same permissions as source file
 
