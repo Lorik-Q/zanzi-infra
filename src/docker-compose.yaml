@@ -93,7 +93,7 @@ services:
 
   sensormeasurements:
     container_name: flwsb-sensormeasurements
-    build: 
+    build:
       context: ./sensormeasurements
       dockerfile: ./Dockerfile
     depends_on:

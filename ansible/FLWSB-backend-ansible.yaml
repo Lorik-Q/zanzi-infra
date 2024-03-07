@@ -4,8 +4,8 @@
   user: '{{ user }}'
   vars:
     domains:
-      - grafana.iot-ap.be
-      - api.iot-ap.be
+      - zanzi-test-2-grafana.aplab.be
+      - zanzi-test-2-api.aplab.be
   roles:
     - ufwinstall
   tasks:
@@ -16,80 +16,67 @@
 # optional: add -v, -vv or -vvv to increase verbosity (more logs, handy when troubleshooting)
 
     - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: true
-      become: true
+      apt:
+        update_cache: yes
 
-    - name: Install packages
-      ansible.builtin.apt:
-        pkg:
+    - name: Install dependencies
+      apt:
+        name:
+          - apt-transport-https
           - ca-certificates
           - curl
           - gnupg
           - lsb-release
-          - pip
-          - git
-          - certbot
-          - python3-certbot-nginx
         state: present
-      become: true
 
-    - name: Add Docker's GPG key
-      ansible.builtin.apt_key:
+    - name: Add Docker APT GPG key
+      apt_key:
         url: https://download.docker.com/linux/debian/gpg
         state: present
-      become: true
 
-    - name: Add Docker repo
-      ansible.builtin.apt_repository:
-        repo: deb https://download.docker.com/linux/debian bullseye stable
-          # get architecture: dpkg --print-architecture
-          # get lsb release: lsb_release -cs
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
         state: present
-      become: true
 
-    - name: Update apt cache
-      ansible.builtin.apt:
-        update_cache: true
-      become: true
-
-    - name: Install Docker Engine
-      ansible.builtin.apt:
-        pkg:
-          - docker-ce
-          - docker-ce-cli
-          - containerd.io
-          - docker-buildx-plugin
-          - docker-compose-plugin
-        state: present
-      become: true
-
-    - name: Verify install
-      community.docker.docker_container:
-        name: HelloWorld
-        image: hello-world
-      become: true
-
-    - name: Install docker & docker-compose via pip
-      ansible.builtin.pip:
+    - name: Install Docker and Docker Compose
+      apt:
         name:
           - docker
           - docker-compose
+        state: present
       become: true
 
-    - name: Clone git repo
-      ansible.builtin.git:
-        repo: "https://github.com/jappie3/flexible-lorawan-architecture"
-        # version: LATEST
-        dest: ~/flexible-lorawan-architecture/
-        force: true # overwrite existing repo (with possibly changes)
+    - name: Add user to docker group
+      user:
+        name: "{{ user }}"
+        append: yes
+        groups: docker
 
-    - name: Copy .env file from local machine to remote server
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Copy repo from local machine to remote server
+      ansible.builtin.copy:
+        src: ~/School/zanzi-project/flexible-lorawan-architecture
+        dest: ~/
+        mode: preserve # keep same permissions as source file
+
+    - name: copy .env to src dir
       ansible.builtin.copy:
         src: .env
-        # copy inside cloned git repo
         dest: ~/flexible-lorawan-architecture/src/.env
-        mode: preserve # keep same permissions as source file
+        mode: preserve
+
+    - name: Copy .env to nginx directory
+      ansible.builtin.copy:
+        src: .env
+        dest: ~/flexible-lorawan-architecture/src/nginx/.env
+        mode: preserve
+
 
     - name: Generate SSL certificates
       ansible.builtin.command: certbot certonly --agree-tos --email "{{ email }}" --standalone -d {{ item }}
@@ -106,6 +93,25 @@
         hour: "0"
         weekday: "1"
         # crontab runs every monday at 00:00
+
+    - name: Check if Nginx is installed
+      ansible.builtin.stat:
+        path: /etc/nginx/nginx.conf
+      register: nginx_installed
+
+    - name: Check if Nginx is enabled
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+      register: nginx_enabled
+      when: nginx_installed.stat.exists
+
+    - name: Stop and disable Nginx if installed and enabled
+      ansible.builtin.systemd:
+        name: nginx
+        state: stopped
+        enabled: no
+      when: nginx_installed.stat.exists
 
     - name: Bring docker compose up
       community.docker.docker_compose:
