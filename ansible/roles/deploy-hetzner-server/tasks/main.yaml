@@ -1,0 +1,3 @@
+---
+- name: Create Hetzner Server
+  ansible.builtin.include_tasks: server.yaml

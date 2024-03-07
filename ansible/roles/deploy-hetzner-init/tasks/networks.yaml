@@ -1,0 +1,22 @@
+---
+- name: Set fact for hcloud token
+  ansible.builtin.set_fact:
+    hcloud_token: "{{ lookup('env', 'HETZNER_API_TOKEN') }}"
+
+- name: Create networks specified in vars file
+  loop: "{{ all_networks }}"
+  hetzner.hcloud.hcloud_network:
+    api_token: "{{ hcloud_token }}"
+    state: present
+    name: "{{ item.name }}"
+    ip_range: "{{ item.ip_range }}"
+
+- name: Create subnetworks
+  loop: "{{ all_networks }}"
+  hetzner.hcloud.hcloud_subnetwork:
+    api_token: "{{ hcloud_token }}"
+    state: present
+    type: cloud
+    ip_range: "{{ item.ip_range }}"
+    network: "{{ item.name }}"
+    network_zone: "eu-central"

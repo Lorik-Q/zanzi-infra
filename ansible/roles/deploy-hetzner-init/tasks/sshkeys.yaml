@@ -1,0 +1,12 @@
+---
+- name: Set fact for hcloud token
+  ansible.builtin.set_fact:
+    hcloud_token: "{{ lookup('env', 'HETZNER_API_TOKEN') }}"
+
+- name: Add all SSH keys specified in vars file
+  loop: "{{ ssh_keys }}"
+  hetzner.hcloud.hcloud_ssh_key:
+    api_token: "{{ hcloud_token }}"
+    state: present
+    name: "{{ item.name }}"
+    public_key: "{{ item.key }}"
