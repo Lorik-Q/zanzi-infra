@@ -29,33 +29,54 @@
           - lsb-release
         state: present
 
-    - name: Install docker - debian
-      include_role:
-        - install-docker-debian
-      when: ansible_os_family == 'Debian'
+    - name: Add Docker APT GPG key
+      apt_key:
+        url: https://download.docker.com/linux/debian/gpg
+        state: present
 
-    - name: install docker - rocky
-      include_role:
-        - install-docker-rocky
-      when: ansible_os_family == 'Rocky'
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable
+        state: present
+
+    - name: Install Docker and Docker Compose
+      apt:
+        name:
+          - docker
+          - docker-compose
+        state: present
+      become: true
+
+    - name: Add user to docker group
+      user:
+        name: "{{ user }}"
+        append: yes
+        groups: docker
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
     - name: Copy repo from local machine to remote server
       ansible.builtin.copy:
-        src: ~/zanzi-infra # Change this to the folder where you copied this repo
+        src: ~/flexible-lorawan-architecture # Change this to the folder where you copied this repo
         dest: ~/
         mode: preserve # keep same permissions as source file
 
     - name: copy .env to src dir
       ansible.builtin.copy:
         src: .env
-        dest: ~/zanzi-infra/src/.env
+        dest: ~/flexible-lorawan-architecture/src/.env
         mode: preserve
 
     - name: Copy .env to nginx directory
       ansible.builtin.copy:
         src: .env
-        dest: ~/zanzi-infra/src/nginx/.env
+        dest: ~/flexible-lorawan-architecture/src/nginx/.env
         mode: preserve
+
 
     - name: Generate SSL certificates
       ansible.builtin.command: certbot certonly --agree-tos --email "{{ email }}" --standalone -d {{ item }}
