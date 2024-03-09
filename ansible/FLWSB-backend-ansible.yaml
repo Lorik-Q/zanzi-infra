@@ -16,12 +16,12 @@
 # optional: add -v, -vv or -vvv to increase verbosity (more logs, handy when troubleshooting)
 
     - name: Update system
-      include_role:
-        - updateall
+      ansible.builtin.include_role:
+        name: updateall
 
     - name: free services running on port 80 by default
-      include_role:
-        - clear_port80-services
+      ansible.builtin.include_role:
+        name: clear_port80-services
 
     - name: Install dependencies
       apt:
@@ -34,13 +34,13 @@
         state: present
 
     - name: Install docker - debian
-      include_role:
-        - install-docker-debian
+      ansible.builtin.include_role:
+        name: install-docker-debian
       when: ansible_os_family == 'Debian'
 
     - name: install docker - rocky
-      include_role:
-        - install-docker-rocky
+      ansible.builtin.include_role:
+        name: install-docker-rocky
       when: ansible_os_family == 'Rocky'
 
     - name: Copy repo from local machine to remote server
@@ -49,7 +49,7 @@
         dest: ~/
         mode: preserve # keep same permissions as source file
 
-    - name: copy .env to src dir
+    - name: copy .env to src directory
       ansible.builtin.copy:
         src: .env
         dest: ~/zanzi-infra/src/.env
