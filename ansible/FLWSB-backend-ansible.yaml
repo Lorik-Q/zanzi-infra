@@ -19,6 +19,10 @@
       include_role:
         - updateall
 
+    - name: free services running on port 80 by default
+      include_role:
+        - clear_port80-services
+
     - name: Install dependencies
       apt:
         name:
@@ -72,25 +76,6 @@
         hour: "0"
         weekday: "1"
         # crontab runs every monday at 00:00
-
-    - name: Check if Nginx is installed
-      ansible.builtin.stat:
-        path: /etc/nginx/nginx.conf
-      register: nginx_installed
-
-    - name: Check if Nginx is enabled
-      ansible.builtin.systemd:
-        name: nginx
-        state: started
-      register: nginx_enabled
-      when: nginx_installed.stat.exists
-
-    - name: Stop and disable Nginx if installed and enabled
-      ansible.builtin.systemd:
-        name: nginx
-        state: stopped
-        enabled: no
-      when: nginx_installed.stat.exists
 
     - name: Bring docker compose up
       community.docker.docker_compose:

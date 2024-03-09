@@ -1,0 +1,36 @@
+---
+# check if services are running
+- name: Check if Nginx service is enabled
+  shell: systemctl is-enabled --quiet nginx
+  register: nginx_enabled
+  ignore_errors: yes
+
+- name: Check if Apache service is enabled
+  shell: systemctl is-enabled --quiet apache
+  register: apache_enabled
+  ignore_errors: yes
+
+- name: Check if Httpd service is enabled
+  shell: systemctl is-enabled --quiet httpd
+  register: httpd_enabled
+  ignore_errors: yes
+
+- name: Check if litespeed service is enabled
+  shell: systemctl is-enabled --quiet litespeed
+  register: litespeed_enabled
+  ignore_errors: yes
+
+
+# free port 80 - turn services off
+- name: Stop and disable web services
+  service:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - nginx
+    - apache2
+    - httpd
+    - litespeed
+  when: (nginx_enabled|default(false)) or (apache_enabled|default(false)) or (httpd_enabled|default(false)) or (litespeed_enabled|default(false))
+  ignore_errors: yes
