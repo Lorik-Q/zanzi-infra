@@ -1,0 +1,5 @@
+---
+- name: Update Alpine Linux systems
+  apk:
+    update_cache: yes
+    upgrade: yes

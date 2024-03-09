@@ -1,0 +1,41 @@
+---
+- name: Install and configure unattended-upgrades - ROCKY
+  ansible.builtin.include_tasks: Rocky.yaml
+  when: ansible_os_family == 'Rocky'
+
+- name: Install and configure unattended-upgrades - RedHat
+  ansible.builtin.include_tasks: RedHat.yaml
+  when: ansible_os_family == 'RedHat'
+
+- name: Install and configure unattended-upgrades - Ubuntu
+  ansible.builtin.include_tasks: Ubuntu.yaml
+  when: ansible_os_family == 'Ubuntu'
+
+- name: Install and configure unattended-upgrades - Debian
+  ansible.builtin.include_tasks: Debian.yaml
+  when: ansible_os_family == 'Debian'
+
+- name: Install and configure unattended-upgrades - Windows
+  ansible.builtin.include_tasks: Windows.yaml
+  when: ansible_os_family == 'Windows'
+
+- name: Install and configure unattended-upgrades - Suse
+  ansible.builtin.include_tasks: Suse.yaml
+  when: ansible_os_family == 'Suse'
+
+- name: Install and configure unattended-upgrades - Arch
+  ansible.builtin.include_tasks: Arch.yaml
+  when: ansible_os_family == 'Archlinux'
+
+- name: Install and configure unattended-upgrades - Alpine
+  ansible.builtin.include_tasks: Alpine.yaml
+  when: ansible_os_family == 'Alpine'
+
+- name: Install and configure unattended-upgrades - FreeBSD
+  ansible.builtin.include_tasks: FreeBSD.yaml
+  when: ansible_os_family == 'FreeBSD'
+
+- name: reboot
+  reboot:
+    reboot_timeout: 3600
+  when: ansible_os_family != 'Windows'
