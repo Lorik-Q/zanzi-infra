@@ -1,4 +1,9 @@
 ---
+- name: install rsync
+  ansible.builtin.package:
+    name: rsync
+    state: present
+
 - name: make directory if not exists
   ansible.builtin.file:
     path: /root/zanzi-infra # this makes the directory if it does not exists
