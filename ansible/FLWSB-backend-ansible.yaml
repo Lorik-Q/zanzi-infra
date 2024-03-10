@@ -53,6 +53,7 @@
         src: ~/zanzi-infra/ansible/roles/nginx.conf
         dest: ~/zanzi-infra/src/nginx/nginx.conf
         mode: preserve
+      when: not is_hetzner
 
     - name: Generate SSL certificates
       ansible.builtin.command: certbot certonly --agree-tos --email "{{ email }}" --standalone -d {{ item }}
