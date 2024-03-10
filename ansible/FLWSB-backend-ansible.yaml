@@ -19,7 +19,7 @@
       ansible.builtin.include_role:
         name: updateall
 
-    - name: free services running on port 80 by default
+    - name: Free services running on port 80 by default
       ansible.builtin.include_role:
         name: clear_port80-services
 
@@ -38,28 +38,14 @@
         name: install-docker-debian
       when: ansible_os_family == 'Debian'
 
-    - name: install docker - rocky
+    - name: Install docker - rocky
       ansible.builtin.include_role:
         name: install-docker-rocky
       when: ansible_os_family == 'Rocky'
 
-    - name: Copy repo from local machine to remote server
-      ansible.builtin.copy:
-        src: ~/zanzi-infra # Change this to the folder where you copied this repo
-        dest: ~/
-        mode: preserve # keep same permissions as source file
-
-    - name: copy .env to src directory
-      ansible.builtin.copy:
-        src: .env
-        dest: ~/zanzi-infra/src/.env
-        mode: preserve
-
-    - name: Copy .env to nginx directory
-      ansible.builtin.copy:
-        src: .env
-        dest: ~/zanzi-infra/src/nginx/.env
-        mode: preserve
+    - name: Copy files to remote server
+      ansible.builtin.include_role:
+        name: copy_files
 
     - name: Generate SSL certificates
       ansible.builtin.command: certbot certonly --agree-tos --email "{{ email }}" --standalone -d {{ item }}
@@ -79,7 +65,7 @@
 
     - name: Bring docker compose up
       community.docker.docker_compose:
-        project_src: flexible-lorawan-architecture/src/
+        project_src: ~/zanzi-infra/src/
         files:
           - docker-compose.yaml
       become: true

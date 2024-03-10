@@ -1,0 +1,25 @@
+---
+- name: make directory if not exists
+  ansible.builtin.file:
+    path: /root/zanzi-infra # this makes the directory if it does not exists
+    state: directory
+    mode: '0755'
+
+- name: Copy repo from local machine to remote server
+  ansible.posix.synchronize:
+    src: ~/zanzi-infra
+    dest: ~/
+    rsync_opts:
+      - "--exclude=ansible/" # not needed, save some bandwidth/time
+
+- name: copy .env to src directory
+  ansible.builtin.copy:
+    src: .env
+    dest: ~/zanzi-infra/src/.env
+    mode: preserve
+
+- name: Copy .env to nginx directory
+  ansible.builtin.copy:
+    src: .env
+    dest: ~/zanzi-infra/src/nginx/.env
+    mode: preserve
