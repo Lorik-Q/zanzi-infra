@@ -1,0 +1,12 @@
+---
+- name: install dependencies - debian os
+  ansible.builtin.include_tasks: debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: install dependencies - rocky os
+  ansible.builtin.include_tasks: rocky.yml
+  when: ansible_os_family == 'Rocky'
+
+- name: install dependencies - RedHat os
+  ansible.builtin.include_tasks: redHat.yaml
+  when: ansible_os_family == 'RedHat'

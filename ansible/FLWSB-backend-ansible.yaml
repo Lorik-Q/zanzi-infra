@@ -24,15 +24,9 @@
       ansible.builtin.include_role:
         name: clear_port80-services
 
-    - name: Install dependencies
-      apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - lsb-release
-        state: present
+    - name: install dependencies
+      ansible.builtin.include_role:
+        name: install_dependencies_FLWSB
 
     - name: Install docker - debian
       ansible.builtin.include_role:
