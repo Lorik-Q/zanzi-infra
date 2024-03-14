@@ -1,0 +1,15 @@
+---
+    - name: Get server ip-address
+      ansible.builtin.command: hostname -I
+      register: ip_address_result
+
+    - name: Determine server type
+      set_fact:
+        is_hetzner: >-
+          {{
+            'false'
+            if ip_address_result.stdout.split()[0] | ipaddr('10.0.0.0/8') or
+               ip_address_result.stdout.split()[0] | ipaddr('172.16.0.0/12') or
+               ip_address_result.stdout.split()[0] | ipaddr('192.168.0.0/16')
+            else 'true'
+          }}

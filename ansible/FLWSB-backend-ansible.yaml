@@ -48,6 +48,10 @@
       ansible.builtin.include_role:
         name: copy_files
 
+    - name: Determine server type
+      ansible.builtin.include_role:
+        name: determine-server-type
+
     - name: Copy nginx.conf if running locally
       ansible.builtin.copy:
         src: ~/zanzi-infra/ansible/roles/nginx.conf
