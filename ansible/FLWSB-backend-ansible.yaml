@@ -58,6 +58,10 @@
         name: gen-renew-certificates
       when: is_hetzner
 
+    - name: install checkmk server native
+      ansible.builtin.include_role:
+        name: checkmk-server
+
     - name: Bring docker compose up
       community.docker.docker_compose:
         project_src: ~/zanzi-infra/src/
