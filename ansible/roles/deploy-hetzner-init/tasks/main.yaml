@@ -1,0 +1,7 @@
+---
+- name: Add SSH keys to Hetzner
+  ansible.builtin.include_tasks: sshkeys.yaml
+- name: Create networks
+  ansible.builtin.include_tasks: networks.yaml
+- name: Create placement groups
+  ansible.builtin.include_tasks: placement_groups.yaml

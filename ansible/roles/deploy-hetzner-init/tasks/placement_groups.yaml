@@ -1,0 +1,12 @@
+---
+- name: Set fact for hcloud token
+  ansible.builtin.set_fact:
+    hcloud_token: "{{ lookup('env', 'HETZNER_API_TOKEN') }}"
+
+- name: Create placement groups specified in vars file
+  loop: "{{ all_placement_groups }}"
+  hetzner.hcloud.hcloud_placement_group:
+    api_token: "{{ hcloud_token }}"
+    state: present
+    name: "{{ item }}"
+    type: spread

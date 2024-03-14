@@ -1,0 +1,68 @@
+---
+- name: Set fact for hcloud token
+  ansible.builtin.set_fact:
+    hcloud_token: "{{ lookup('env', 'HETZNER_API_TOKEN') }}"
+
+# trying to create a server with the placement group variable
+# empty somehow still puts it in a placement group
+# -> splitting this functionality into 2 different tasks works
+
+- name: Create server w/o placement group
+  when: placement_group is not defined
+  hetzner.hcloud.hcloud_server:
+    api_token: "{{ hcloud_token }}"
+    state: present
+    name: "{{ name }}"
+    server_type: "{{ type | default('cax11') }}" # Arm64
+    image: "{{ image | default('rocky-9') }}"
+    location: "{{ location | default('nbg1') }}"
+    ssh_keys: "{{ keys | default([]) | list }}"
+    private_networks: "{{ networks | default([]) | list }}"
+
+- name: Create server w/ placement group
+  when: placement_group is defined and placement_group | length > 0
+  hetzner.hcloud.hcloud_server:
+    api_token: "{{ hcloud_token }}"
+    state: present
+    name: "{{ name }}"
+    server_type: "{{ type | default('cax11') }}" # Arm64
+    image: "{{ image | default('rocky-9') }}"
+    location: "{{ location | default('nbg1') }}"
+    placement_group: "{{ placement_group | default(None) }}"
+    ssh_keys: "{{ keys | default([]) | list }}"
+    private_networks: "{{ networks | default([]) | list }}"
+
+- name: Get server info
+  hetzner.hcloud.hcloud_server_info:
+    api_token: "{{ hcloud_token }}"
+  register: servers
+
+- name: Filter server info
+  ansible.builtin.set_fact:
+    thisserver: "{{ servers.hcloud_server_info | selectattr('name', 'equalto', name) | list }}"
+
+- name: Set the reverse DNS entry for the server
+  # only if rdns variable is set
+  when: rdns is defined and rdns | length > 0
+  hetzner.hcloud.hcloud_rdns:
+    api_token: "{{ hcloud_token }}"
+    state: present
+    server: "{{ thisserver[0]['name'] }}"
+    ip_address: "{{ thisserver[0]['ipv4_address'] }}"
+    dns_ptr: "{{ rdns }}"
+
+- name: Set IP in hosts file under all categories defined in the 'category' variable
+  loop: "{{ categories }}"
+  ansible.builtin.lineinfile:
+    path: ./hosts
+    create: true
+    mode: "0644"
+    # result: <server name> ansible_host=<public IP> private_ips=[<array of strings containing private IPs>]
+    # the \n\ is to get a newline & to avoid printing a leading space on the next line (I know it's weird, but it works)
+    line: "[{{ item }}]\n\
+      {{ thisserver[0]['name'] }}
+      ansible_host={{ thisserver[0]['ipv4_address'] }}
+      private_ips=\"{{ thisserver[0]['private_networks_info'] | map(attribute='ip') | list }}\""
+
+- name: Refresh inventory
+  ansible.builtin.meta: refresh_inventory
