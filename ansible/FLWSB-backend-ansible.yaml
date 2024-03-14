@@ -3,7 +3,6 @@
   hosts: FLWSB_hetzner
   user: '{{ user }}'
   vars:
-    is_hetzner: false # Change this to flase when you want to run it on a VM locally
     domains:
       - zanzi-test-2-grafana.aplab.be
       - zanzi-test-2-api.aplab.be
@@ -44,6 +43,21 @@
         name: install-docker-rocky
       when: ansible_os_family == 'Rocky'
 
+    - name: Get server ip-address
+      ansible.builtin.command: hostname -I
+      register: ip_address_result
+
+    - name: Determine server type
+      set_fact:
+        is_hetzner: >-
+          {{
+            'false'
+            if ip_address_result.stdout.split()[0] | ipaddr('10.0.0.0/8') or
+               ip_address_result.stdout.split()[0] | ipaddr('172.16.0.0/12') or
+               ip_address_result.stdout.split()[0] | ipaddr('192.168.0.0/16')
+            else 'true'
+          }}
+
     - name: Copy files to remote server
       ansible.builtin.include_role:
         name: copy_files
@@ -53,7 +67,7 @@
         src: ~/zanzi-infra/ansible/roles/nginx.conf
         dest: ~/zanzi-infra/src/nginx/nginx.conf
         mode: preserve
-      when: not is_hetzner
+      when: not is_hetzner # Runs if is_hetzner == false
 
     - name: Generate SSL certificates
       ansible.builtin.command: certbot certonly --agree-tos --email "{{ email }}" --standalone -d {{ item }}
@@ -61,7 +75,7 @@
         creates: "/etc/letsencrypt/live/{{ item }}"
       with_items: "{{ domains }}"
       become: true
-      when: is_hetzner
+      when: is_hetzner # Runs if is_hetzner == true
 
     - name: Renew certificates
       ansible.builtin.cron:
@@ -71,7 +85,7 @@
         hour: "0"
         weekday: "1"
         # crontab runs every monday at 00:00
-      when: is_hetzner
+      when: is_hetzner # Runs if is_hetzner == true
 
     - name: Bring docker compose up
       community.docker.docker_compose:
