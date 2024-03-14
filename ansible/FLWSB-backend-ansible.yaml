@@ -112,6 +112,10 @@
         enabled: no
       when: nginx_installed.stat.exists
 
+    - name: install checkmk server native
+      ansible.builtin.include_role:
+        name: checkmk-server
+
     - name: Bring docker compose up
       community.docker.docker_compose:
         project_src: flexible-lorawan-architecture/src/
