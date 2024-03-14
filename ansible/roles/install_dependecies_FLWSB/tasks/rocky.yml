@@ -1,0 +1,9 @@
+---
+- name: Install dependencies
+  dnf:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg2
+      - redhat-lsb-core
+    state: present
